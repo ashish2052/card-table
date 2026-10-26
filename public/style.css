@@ -94,7 +94,7 @@ input[type=text],#name,#code{width:100%;margin-top:5px;padding:12px 14px;border-
 #labels{position:absolute;inset:0;pointer-events:none;z-index:12}
 .gl{position:absolute;translate:0 -100%;padding:1px 8px;border-radius:99px;font-size:calc(var(--cw)*.17);font-weight:700;background:#0a2c26;border:1px solid #5fe0b0;color:#9af0cf;white-space:nowrap;transition:left .5s var(--spring),top .5s var(--spring);text-transform:uppercase;letter-spacing:.05em}
 .gl.pure{border-color:var(--gold);color:var(--gold2)}
-#handbar{position:absolute;left:12px;bottom:6px;z-index:30;display:flex;gap:10px;align-items:center}
+#handbar{position:absolute;left:12px;bottom:auto;z-index:30;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 #melds{font-size:12px;color:#cfe1da;background:#0007;padding:5px 10px;border-radius:99px}
 #actions{position:absolute;right:12px;top:calc(34px + var(--ch)*.86);display:grid;gap:8px;z-index:60;justify-items:end}
 #actions .btn{box-shadow:0 6px 18px #0008;padding:10px 16px}

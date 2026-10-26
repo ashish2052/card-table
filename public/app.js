@@ -60,6 +60,10 @@
   $$('[data-close]').forEach((b) => (b.onclick = () => (b.closest('.overlay').hidden = true)));
   $('#bSound').onclick = () => { Sfx.unlock(); $('#bSound').style.opacity = Sfx.toggle() ? 0.45 : 1; };
   $('#bSound').style.opacity = Sfx.muted ? 0.45 : 1;
+  $('#bFull').onclick = () => {
+    if (document.fullscreenElement) return document.exitFullscreen();
+    document.documentElement.requestFullscreen?.().then(() => screen.orientation?.lock?.('landscape')).catch(() => {});
+  };
   $('#bScores').onclick = () => { if (S && S.result) renderSheet(); else renderTotals(); };
 
   function show(which) { $('#lobby').hidden = which !== 'lobby'; $('#game').hidden = which !== 'game'; }
@@ -184,11 +188,11 @@
     const flat = gs.flat(), n = flat.length, g = gs.length, pos = new Map(), gap = cw * 0.32, avail = vw - 28;
     let step = n > 1 ? (avail - cw - (g - 1) * gap) / (n - 1) : 0;
     step = Math.max(cw * 0.2, Math.min(cw * 0.68, step));
-    const total = cw + (n - 1) * step + (g - 1) * gap, x0 = (vw - total) / 2 + cw / 2, baseY = vh - ch / 2 - 8, mid = (n - 1) / 2;
+    const total = cw + (n - 1) * step + (g - 1) * gap, x0 = (vw - total) / 2 + cw / 2, mid = (n - 1) / 2, curve = Math.min(0.06, 2.4 / Math.max(n, 8)) * (cw / 66), baseY = vh - ch / 2 - 8 - mid * mid * curve;
     let k = 0;
     gs.forEach((grp, gi) => grp.forEach((id, ci) => {
       const d = k - mid;
-      pos.set(id, { x: x0 + k * step + gi * gap, y: baseY + d * d * Math.min(0.06, 2.4 / Math.max(n, 8)) * (cw / 66), r: d * Math.min(0.9, 14 / Math.max(n, 8)), z: 20 + k, gi, ci, k });
+      pos.set(id, { x: x0 + k * step + gi * gap, y: baseY + d * d * curve, r: d * Math.min(0.9, 14 / Math.max(n, 8)), z: 20 + k, gi, ci, k });
       k++;
     }));
     return { pos, step };
@@ -361,7 +365,7 @@
     if (!S.seenMe && myTurn() && S.step === 'discard' && S.last && false) toast('');
   }
   function positionChrome() {
-    $('#handbar').style.top = geo.cy + ch / 2 + 8 + 'px'; $('#handbar').style.bottom = 'auto'; $('#actions').style.top = geo.cy - ch / 2 + 'px';
+    $('#handbar').style.top = geo.cy - ch / 2 + 'px'; $('#handbar').style.bottom = 'auto'; $('#actions').style.top = geo.cy - ch / 2 + 'px';
     const mlt = $('#shownMe'); mlt.style.left = '0';
   }
 
