@@ -60,6 +60,12 @@
   $$('[data-close]').forEach((b) => (b.onclick = () => (b.closest('.overlay').hidden = true)));
   $('#bSound').onclick = () => { Sfx.unlock(); $('#bSound').style.opacity = Sfx.toggle() ? 0.45 : 1; };
   $('#bSound').style.opacity = Sfx.muted ? 0.45 : 1;
+  $('#bExit').onclick = () => {
+    if (!confirm('Leave this game?')) return;
+    localStorage.removeItem('marriage.session'); session = null; S = null;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    location.href = '/';
+  };
   $('#bFull').onclick = () => {
     if (document.fullscreenElement) return document.exitFullscreen();
     document.documentElement.requestFullscreen?.().then(() => screen.orientation?.lock?.('landscape')).catch(() => {});
