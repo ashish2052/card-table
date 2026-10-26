@@ -1,0 +1,8 @@
+round 1: winner Computer 2, moves 16
+round 2: winner Tester, moves 11
+round 3: winner Tester, moves 7
+round 4: winner Tester, moves 21
+round 5: winner Computer 1, moves 19
+round 6: winner Computer 2, moves 35
+round 7: winner Computer 1, moves 17
+round 8: winner Computer 1, moves 33

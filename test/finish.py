@@ -1,0 +1,5 @@
+from pathlib import Path
+p=Path('table-games.js');s=p.read_text().replace("this.stock.push(52,53);","this.stock=shuffle([...this.stock,52,53]);");s=s.replace('this.pending=m.ids;','this.pending=m.ids.slice().sort((a,b)=>byId(a).r-byId(b).r);');p.write_text(s)
+p=Path('public/table-ui.js');s=p.read_text();s=s.replace('other.push(id)}}}}else','other.push(id);send({t:"arrange",groups:rows})}}}}else');s=s.replace('map(r=>r.map(c=>c.id));paint()},S.ready', 'map(r=>r.map(c=>c.id));send({t:"arrange",groups:rows});paint()},S.ready');s=s.replace("+'<button class=\"btn\" id=\"otClose\">Close</button>'", "+(r?.revealed?r.revealed.map((rows,i)=>'<p>'+esc(S.players[i].name)+'</p>'+rows.map((row,j)=>'<div style=\"display:inline-block;margin:6px\">Show '+(j+1)+'<br>'+row.map(c=>'<span style=\"display:inline-block;width:35px;height:49px\">'+cardFace(c)+'</span>').join('')+'</div>').join('')).join(''):'')+'<button class=\"btn\" id=\"otClose\">Close</button>'")
+s=s.replace("action('otCall','JHYAP',", "action('otCall','JHYAP ('+S.handFlat.reduce((v,c)=>v+(c.r===11&&S.opts.variant!=='international'?0:Math.min(c.r,10)),0)+' pts)',")
+p.write_text(s)

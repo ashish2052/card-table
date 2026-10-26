@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b2b26">
+<title>Marriage - the Nepali card game</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="defs"></div>
+
+<section id="lobby" class="screen">
+  <div class="hero" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="panel">
+    <h1>Marriage <span class="dev">विवाह</span></h1>
+    <p class="sub">The Nepali three-deck rummy. 2 to 5 players, any phone or laptop.</p>
+    <div id="entry"><div class="seg" id="gamepicker"><button class="on" data-game="marriage">Marriage</button><button data-game="kitty">Kitty</button><button data-game="jhyap">Jhyap</button></div><div id="gameoptions"></div>
+      <label>Your name<input id="name" maxlength="14" autocomplete="off" placeholder="e.g. Ashish"></label>
+      <div class="row">
+        <button id="create" class="btn gold">Play with friends</button>
+        <span class="or">or</span>
+        <input id="code" maxlength="4" autocomplete="off" placeholder="CODE" aria-label="Room code">
+        <button id="join" class="btn">Join</button>
+      </div>
+      <div class="row"><button id="vsbot" class="btn gold">Play with computer</button>
+        <div class="seg" id="botseg"><button data-v="1">1</button><button data-v="2" class="on">2</button><button data-v="3">3</button><button data-v="4">4</button></div><span class="hint">opponents</span></div>
+    </div>
+    <div id="room" hidden>
+      <div class="codebox"><span>Room code</span><b id="roomcode">----</b></div>
+      <div class="row"><button id="share" class="btn">Copy invite link</button><span id="linkhint" class="hint"></span></div>
+      <ul id="plist"></ul>
+      <div class="row"><button id="addbot" class="btn">+ Add computer player</button></div>
+      <div id="optrow" class="row opt"><span>Dublee win</span>
+        <div class="seg" id="dubseg"><button data-v="7" class="on">7 dublees</button><button data-v="8">8 (pagat)</button></div></div>
+      <div class="row opt dim"><label><input type="checkbox" disabled> Murder</label><label><input type="checkbox" disabled> Kidnap</label><span class="hint">variants (off, not built yet)</span></div>
+      <button id="start" class="btn gold big">Deal the cards</button>
+      <p id="waiting" class="hint" hidden>Waiting for the host to deal...</p>
+    </div>
+    <p id="lobbyerr" class="err"></p>
+    <button id="howto" class="link">How Marriage works</button>
+  </div>
+</section>
+
+<section id="game" class="screen" hidden>
+  <div id="felt"><div class="mark">विवाह</div></div>
+  <div id="topbar">
+    <div class="rc"><span id="gcode"></span><span id="ground"></span></div>
+    <div id="banner"></div>
+    <div class="tools"><button id="bScores" title="Scores">Scores</button><button id="bHow" title="Rules">?</button><button id="bSound" title="Sound">♪</button></div>
+  </div>
+  <div id="pods"></div>
+  <div id="table">
+    <div id="shownMe"></div>
+    <div id="stockSlot" class="slot"><b id="stockCount"></b></div>
+    <div id="discSlot" class="slot"></div>
+    <div id="maalSlot" class="slot maal"><span id="maalLabel">Maal</span><small id="maalTxt"></small></div>
+  </div>
+  <div id="cards"></div>
+  <div id="labels"></div>
+  <div id="handbar">
+    <div class="seg sort"><button data-sort="suit">Suit</button><button data-sort="rank">Rank</button><button data-sort="auto">Auto</button></div>
+    <div id="melds"></div>
+  </div>
+  <div id="actions">
+    <button id="aGroup" class="btn" hidden>Group</button>
+    <button id="aSplit" class="btn" hidden>Ungroup</button>
+    <button id="aDiscard" class="btn" hidden>Discard</button>
+    <button id="aShow" class="btn gold" hidden>Show 3 melds</button>
+    <button id="aDeclare" class="btn gold pulse" hidden>Declare</button>
+  </div>
+  <canvas id="confetti"></canvas>
+</section>
+
+<div id="sheet" class="overlay" hidden><div class="card-panel" id="sheetBody"></div></div>
+<div id="rules" class="overlay" hidden><div class="card-panel">
+  <h2>How Marriage works</h2>
+  <ul>
+    <li><b>Goal:</b> make 7 melds of 3 cards from your 21, then throw the last card. Draw one (stock or the last discard), throw one.</li>
+    <li><b>Melds:</b> <em>tunnela</em> (3 identical cards), <em>pure run</em> (3 in a row, one suit, A low or high), <em>set</em> (same rank, 3 suits), or a <em>dirty</em> meld using maal/jokers.</li>
+    <li><b>See the maal:</b> lay down 3 tunnelas / pure runs. Then you see the <em>tiplu</em>. Wild cards: tiplu, poplu (rank up), jhiplu (rank down), alter (same rank, same colour), jokers (same rank, other colour), man (printed joker).</li>
+    <li><b>After seeing</b> you can't pick up a discarded wild card. Unseen players pay the winner 10, seen players 3, and everybody pays the difference in maal points.</li>
+    <li><b>Dublee:</b> identical pairs. 7 dublees win (or 8 on the pagat rule, where 7 lets you see the maal).</li>
+    <li><b>Controls:</b> tap a card to select, drag to reorder or onto the pile to discard. Tap the stock or the pile to draw.</li>
+  </ul>
+  <button class="btn" data-close>Got it</button>
+</div></div>
+<div id="toast"></div>
+<div id="rotate"><div>Turn your phone sideways<small>Marriage plays in landscape</small></div></div>
+
+<script src="rules.js"></script>
+<script src="cards.js"></script>
+<script src="audio.js"></script>
+<script src="kitty-rules.js"></script><script src="table-ui.js"></script><script src="app.js"></script>
+</body>
+</html>

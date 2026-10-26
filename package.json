@@ -1,0 +1,12 @@
+{
+  "name": "marriage-game",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/run.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

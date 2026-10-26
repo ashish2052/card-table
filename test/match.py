@@ -1,0 +1,11 @@
+from pathlib import Path
+p=Path('table-games.js');s=p.read_text();s=s.replace("this.hands=Array.from({length:n},()=>[]);","this.active=opts.active||Array.from({length:n},(_,i)=>i);while(!this.active.includes(this.turn))this.turn=(this.turn+1)%n;this.hands=Array.from({length:n},()=>[]);")
+s=s.replace('for(let h of this.hands)h.push(this.stock.pop())','for(let seat of this.active)this.hands[seat].push(this.stock.pop())')
+s=s.replace('i!==s&&v<=totals[s]','i!==s&&this.active.includes(i)&&v<=totals[s]')
+s=s.replace('totals.indexOf(Math.min(...totals))','this.active.reduce((a,b)=>totals[b]<totals[a]?b:a,this.active[0])')
+s=s.replace('net:i===s?', 'net:!this.active.includes(i)?0:i===s?')
+s=s.replace('this.turn=(s+1)%this.n;','this.turn=(s+1)%this.n;while(!this.active.includes(this.turn))this.turn=(this.turn+1)%this.n;')
+p.write_text(s)
+p=Path('server.js');s=p.read_text();s=s.replace('this.round++; this.dealer',"if(this.type==='jhyap'){this.opts.active=this.players.filter(p=>p.total<=(this.opts.variant==='international'?200:100)).map(p=>p.seat);if(this.opts.active.length<2)throw uerr('Match complete: last player standing wins. Create a new room to play again.');}\n    this.round++; this.dealer")
+s=s.replace("if (!p.online && Date.now()", "if (r.type==='marriage' && !p.online && Date.now()")
+p.write_text(s)

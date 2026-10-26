@@ -1,0 +1,28 @@
+const K=require('./public/kitty-rules');
+const deck=()=>{let d=[];for(let s of 'SHDC')for(let r=1;r<=13;r++)d.push({id:d.length,r,s});return d};
+const D=deck(),byId=id=>D[id]||{id,r:0,s:'J'};
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function fail(m){let e=new Error(m);e.user=true;throw e}
+const value=(c,o={})=>c.r===0?0:c.r===11&&o.variant!=='international'?0:Math.min(c.r,10);
+const total=(h,o)=>h.reduce((s,id)=>s+value(byId(id),o),0);
+function legal(ids){if(!ids.length||new Set(ids).size!==ids.length)return false;let cs=ids.map(byId),plain=cs.filter(c=>c.r),j=cs.length-plain.length;if(cs.length===1||plain.every(c=>c.r===plain[0].r))return true;if(cs.length<3||!plain.every(c=>c.s===plain[0].s))return false;let rs=plain.map(c=>c.r).sort((a,b)=>a-b);return new Set(rs).size===rs.length&&rs.at(-1)-rs[0]+1<=cs.length&&rs.at(-1)<=13&&j>=0}
+class TableGame{
+constructor(type,n,dealer,opts){Object.assign(this,{type,n,dealer,opts,turn:(dealer+1)%n,step:type==='kitty'?'arrange':'throw',over:false,turnSince:Date.now(),ev:{n:1,k:'deal'},last:null});this.active=opts.active||Array.from({length:n},(_,i)=>i);while(!this.active.includes(this.turn))this.turn=(this.turn+1)%n;this.hands=Array.from({length:n},()=>[]);this.layout=Array(n).fill(null);this.ready=Array(n).fill(false);this.seen=Array(n).fill(false);this.pendingSee=Array(n).fill(false);this.shown=Array.from({length:n},()=>[]);this.dubleeShow=Array(n).fill(false);this.stock=shuffle(D.map(c=>c.id));if(type==='jhyap'&&opts.variant==='international')this.stock=shuffle([...this.stock,52,53]);for(let i=0;i<(type==='kitty'?9:5);i++)for(let seat of this.active)this.hands[seat].push(this.stock.pop());this.discard=[this.stock.pop()];this.previous=this.discard.slice();this.pot=opts.pot||0}
+check(s){if(this.over||s!==this.turn)fail('Wait for your turn')}
+arrange(s,rows){let ids=rows.flat();if(ids.length!==this.hands[s].length||new Set(ids).size!==ids.length||ids.some(id=>!this.hands[s].includes(id)))fail('Use each card once');if(this.ready[s])fail('Already ready');this.layout[s]=rows}
+act(s,m){if(m.t==='arrange'){this.arrange(s,m.groups);return}if(this.type==='kitty'){if(m.t!=='ready')return;let rows=m.groups||this.layout[s];this.arrange(s,rows);if(!K.rowsInOrder(rows.map(r=>r.map(byId)),this.opts))fail('Put strongest hand first');this.ready[s]=true;if(this.ready.every(Boolean))this.finishKitty();return}
+this.check(s);if(m.t==='call'){if(this.step!=='throw'||total(this.hands[s],this.opts)>5)fail('Call only at start with 5 points or less');let totals=this.hands.map(h=>total(h,this.opts)),beaten=totals.some((v,i)=>i!==s&&this.active.includes(i)&&v<=totals[s]),intl=this.opts.variant==='international';this.finish({winner:beaten?this.active.reduce((a,b)=>totals[b]<totals[a]?b:a,this.active[0]):s,kind:beaten?'Asaf - call beaten':'JHYAP',rows:totals.map((v,i)=>({seat:i,net:!this.active.includes(i)?0:i===s?(beaten?v+(intl?30:25):0):beaten&&!intl?0:v}))});return}
+if(m.t==='throw'){if(this.step!=='throw'||!legal(m.ids)||m.ids.some(id=>!this.hands[s].includes(id)))fail('Throw a single, same rank group, or suited run');this.hands[s]=this.hands[s].filter(id=>!m.ids.includes(id));this.pending=m.ids.slice().sort((a,b)=>byId(a).r-byId(b).r);this.step='draw';this.ev={n:this.ev.n+1,k:'discard',seat:s};return}
+if(m.t==='draw'){if(this.step!=='draw')fail('Throw first');let id;if(m.from==='discard'){let allowed=this.opts.variant==='international'?[this.previous[0],this.previous.at(-1)]:this.previous;if(!allowed.includes(m.id))fail('Pick an exposed card from the previous throw');id=m.id;this.discard.splice(this.discard.indexOf(id),1)}else{if(!this.stock.length){let keep=new Set(this.previous);this.stock=shuffle(this.discard.filter(id=>!keep.has(id)));this.discard=this.previous.slice()}if(!this.stock.length)fail('No stock: choose previous discard');id=this.stock.pop()}this.hands[s].push(id);this.discard.push(...this.pending);this.previous=this.pending;this.pending=null;this.turn=(s+1)%this.n;while(!this.active.includes(this.turn))this.turn=(this.turn+1)%this.n;this.turnSince=Date.now();this.step='throw';this.ev={n:this.ev.n+1,k:'drawStock',seat:s}}
+}
+finish(r){this.over=true;this.result=r;this.ev={n:this.ev.n+1,k:'win'}}
+finishKitty(){let r=K.showdown(this.layout.map(rows=>rows.map(r=>r.map(byId))),this.hands.map((_,i)=>i),(this.dealer+1)%this.n,this.opts),pot=this.pot+this.n;this.finish({...r,pot:r.winner<0?pot:0,revealed:this.layout.map(rows=>rows.map(r=>r.map(byId))),rows:this.hands.map((_,i)=>({seat:i,net:-1+(i===r.winner?pot:0)+(r.kind==='salaami'?(i===r.winner?this.n-1:-1):0)}))})}
+autoPlay(s){let m=decide(this,s);if(m)this.act(s,m)}
+}
+function decide(g,s){if(g.type==='kitty')return g.ready[s]?null:{t:'ready',groups:K.autoArrange(g.hands[s].map(byId),g.opts).map(r=>r.map(c=>c.id))};if(g.step==='draw'){let allowed=g.opts.variant==='international'?[g.previous[0],g.previous.at(-1)]:g.previous;let best=allowed.slice().sort((a,b)=>value(byId(a),g.opts)-value(byId(b),g.opts))[0];return (value(byId(best),g.opts)<=2 && total(g.hands[s],g.opts)+value(byId(best),g.opts)<=5)||(!g.stock.length&&g.discard.length<=g.previous.length)?{t:'draw',from:'discard',id:best}:{t:'draw',from:'stock'}}if(total(g.hands[s],g.opts)<=5)return {t:'call'};let h=g.hands[s],best=[h[0]],score=-1;for(let mask=1;mask<(1<<h.length);mask++){let ids=h.filter((_,i)=>mask>>i&1);if(legal(ids)){let v=total(ids,g.opts)+ids.length*2;if(v>score){score=v;best=ids}}}return {t:'throw',ids:best}}
+module.exports={TableGame,decide,byId,legal,total,value};
+
+
+
+
+
