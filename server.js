@@ -165,7 +165,12 @@ setInterval(() => {
   for (const r of rooms.values()) {
     const g = r.g;
     if (r.phase !== 'play' || !g || g.over) continue;
-    if(r.type!=='marriage'){for(const p of r.players){if((p.bot||!p.online) && (r.type==='kitty'?!g.ready[p.seat]:p.seat===g.turn)){try{const a=T.decide(g,p.seat);if(a)r.act(p,a)}catch(e){console.error(e)}}}continue;}
+    if(r.type!=='marriage'){
+      // Kitty computers wait until every online human has pressed Ready.
+      if(r.type==='kitty' && r.players.some(p=>!p.bot && p.online && !g.ready[p.seat])) continue;
+      for(const p of r.players){if((p.bot||!p.online) && (r.type==='kitty'?!g.ready[p.seat]:p.seat===g.turn)){try{const a=T.decide(g,p.seat);if(a)r.act(p,a)}catch(e){console.error(e)}}}
+      continue;
+    }
     const p = r.players[g.turn];
     if (!p.bot || Date.now() - g.turnSince < 900 && g.step === 'draw') continue;
     try { const a = Bot.decide(r.view(p.seat)); if (a) r.act(p, a); }
