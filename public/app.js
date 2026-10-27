@@ -60,12 +60,16 @@
   $$('[data-close]').forEach((b) => (b.onclick = () => (b.closest('.overlay').hidden = true)));
   $('#bSound').onclick = () => { Sfx.unlock(); $('#bSound').style.opacity = Sfx.toggle() ? 0.45 : 1; };
   $('#bSound').style.opacity = Sfx.muted ? 0.45 : 1;
-  $('#bExit').onclick = () => {
-    if (!confirm('Leave this game?')) return;
+  function leave(ask) {
+    if (ask && !confirm('Leave this game?')) { history.pushState({ room: 1 }, ''); return; }
     localStorage.removeItem('marriage.session'); session = null; S = null;
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     location.href = '/';
-  };
+  }
+  $('#bExit').onclick = () => leave(true);
+  $('#leave').onclick = () => leave(false);
+  // browser Back leaves the room instead of doing nothing (the app is one page, so there is no history otherwise)
+  window.addEventListener('popstate', () => { if (S) leave(S.phase !== 'lobby'); });
   $('#bFull').onclick = () => {
     if (document.fullscreenElement) return document.exitFullscreen();
     document.documentElement.requestFullscreen?.().then(() => screen.orientation?.lock?.('landscape')).catch(() => {});
@@ -88,6 +92,7 @@
   // ------------------------------------------------------------ state in
   function onState(m) {
     const prev = S; S = m;
+    if (!prev && !(history.state && history.state.room)) history.pushState({ room: 1 }, '');
     if(S.gameType!=='marriage'){window.drawTableGame(S,send);return;}
     if (!prev || prev.turn !== S.turn || prev.step !== S.step) discardSent = false;
     if (S.phase === 'lobby') { show('lobby'); renderLobby(); return; }
