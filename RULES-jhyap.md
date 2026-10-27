@@ -9,7 +9,7 @@ Researched 24 Oct 2026. "Jhyap" is the Nepali name of Yaniv (Israel) - also call
 
 ## Rules built (2-5 players)
 - Deal 5 cards each, one card turned up to start the pile, the rest face down as the stock.
-- Card values: Ace 1, 2-10 face value, K and Q 10. Jack: Nepal option 0 / international 10 (see table). Jokers 0 (international deck only).
+- Card values: Ace 1, 2-10 face value, J, Q and K 10 in every variant (Chairman, 27 Oct 2026: Jack no longer 0). Jokers 0 (international deck only). A call is allowed only with 5 points or less.
 - Your turn: either call JHYAP, or throw then draw. You always throw first, then pick up exactly one card.
 - What you may throw: one card; or 2+ cards of the same rank; or 3+ cards of the same suit in a run (ace is low only: A-2-3 yes, Q-K-A no). A joker may stand for any card. Only one combination per turn.
 - What you may draw: the top of the stock, or a card the previous player threw (Nepal: any one card of their throw; international: only the first or last card of a set/run).
@@ -22,7 +22,7 @@ Researched 24 Oct 2026. "Jhyap" is the Nepali name of Yaniv (Israel) - also call
 | Question | Default (Nepal, pagat) | Option (International, pagat/Wikipedia) |
 |---|---|---|
 | Deck | 52 cards, no jokers | 54 with 2 jokers worth 0 |
-| Jack | 0 points | 10 points |
+| Jack | 10 points | 10 points |
 | Draw from previous throw | any one card of it | first or last card only |
 | Failed call penalty | +25, others score 0 | +30, others score their hand |
 | Out when total over | 100 | 200 |

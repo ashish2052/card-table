@@ -90,6 +90,7 @@ class Room {
       for (const row of r.rows) row.total = this.players[row.seat].total;
       this.history.push({round:this.round,kind:r.kind||'Marriage',rows:r.rows.map(x=>({seat:x.seat,net:x.net,total:x.total}))});
     }
+    if (this.phase === 'over' && this.g && !this.g.botReacted) { this.g.botReacted = true; try { this.botReact(); } catch (e) { console.error(e); } }
     this.broadcast();
   }
   addBot() {
@@ -106,6 +107,27 @@ class Room {
     this.phase = 'play';
   }
 }
+// Emoji reactions: a fixed list, one per 2 s per player, broadcast to the whole room.
+const EMO = ['\u{1F602}','\u{1F60E}','\u{1F621}','\u{1F62D}','\u{1F44F}','\u{1F525}','\u{1F44D}','\u{1F914}','\u{1F609}','\u{1F631}','\u{1F389}','\u{1F64F}'];
+Room.prototype.react = function (p, m) {
+  if (!EMO.includes(m.e)) return false;
+  const now = Date.now(); if (now - (p.lastReact || 0) < 2000) return false;
+  p.lastReact = now;
+  const to = Number.isInteger(m.to) && m.to >= -1 && m.to < this.players.length ? m.to : -1;
+  for (const q of this.players) this.send(q, { t: 'react', from: p.seat, to, e: m.e });
+  return true;
+};
+// Computers rarely react: after a round, the winner may gloat and the loser may groan.
+Room.prototype.botReact = function () {
+  const r = this.g && this.g.result; if (!r || !r.rows || r.rows.length < 2) return;
+  const good = this.type === 'jhyap' ? (x) => -x.net : (x) => x.net;
+  const sorted = r.rows.slice().sort((a, b) => good(b) - good(a)), win = sorted[0], lose = sorted[sorted.length - 1];
+  if (win.seat === lose.seat || good(win) === good(lose)) return;
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  const wb = this.players[win.seat], lb = this.players[lose.seat];
+  if (wb && wb.bot && Math.random() < 0.3) setTimeout(() => this.react(wb, { e: pick([EMO[1], EMO[5], EMO[8], EMO[10]]), to: lose.seat }), 3000);
+  if (lb && lb.bot && Math.random() < 0.3) setTimeout(() => this.react(lb, { e: pick([EMO[3], EMO[2], EMO[9], EMO[7]]), to: win.seat }), 4200);
+};
 const uerr = (m) => { const e = new Error(m); e.user = true; return e; };
 
 wss.on('connection', (ws) => {
@@ -138,6 +160,7 @@ wss.on('connection', (ws) => {
         return;
       }
       if (!room || !me) return err('Not in a room');
+      if (m.t === 'react') { room.react(me, m); return; }
       room.act(me, m);
     } catch (e) {
       if (e.user) err(e.message); else { console.error(e); err('Server error'); }

@@ -31,11 +31,13 @@
       if (m.t === 'hello') { session = { code: m.code, key: m.key }; localStorage.setItem('marriage.session', JSON.stringify(session)); }
       else if (m.t === 'gone') { session = null; localStorage.removeItem('marriage.session'); S = null; show('lobby'); }
       else if (m.t === 'state') onState(m);
+      else if (m.t === 'react') { if (window.onReact) window.onReact(m); }
       else if (m.t === 'err') { discardSent = false; toast(m.m); $('#lobbyerr').textContent = m.m; Sfx.err(); if (S) { reconcile(true); layout(); } }
     };
     ws.onclose = () => { setTimeout(connect, 1000); };
   }
   const send = (m) => { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); };
+  window.__send = send;
   let toastT; function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
 
   // ------------------------------------------------------------ lobby
@@ -95,7 +97,7 @@
 
   // ------------------------------------------------------------ state in
   function onState(m) {
-    const prev = S; S = m;
+    const prev = S; S = m; window.__S = m;
     if (!prev && !(history.state && history.state.room)) history.pushState({ room: 1 }, '');
     if(S.gameType!=='marriage'){window.drawTableGame(S,send);return;}
     if (!prev || prev.turn !== S.turn || prev.step !== S.step) discardSent = false;
@@ -240,7 +242,7 @@
     // ---- opponents' pods
     $('#pods').innerHTML = opps.map((s, i) => {
       const p = S.players[s];
-      return `<div class="pod${S.turn === s && S.phase === 'play' ? ' turn' : ''}${p.online ? '' : ' off'}" style="left:${oppX[s]}px"><span class="av" style="background:${PAL[s]}">${esc(p.name[0] || '?').toUpperCase()}</span><div><span class="n">${esc(p.name)}</span><small>${p.seen ? '<span class="seen">saw maal</span> · ' : ''}${p.total} pts${p.online ? '' : ' · offline'}</small></div></div>`;
+      return `<div class="pod${S.turn === s && S.phase === 'play' ? ' turn' : ''}${p.online ? '' : ' off'}" data-seat="${s}" style="left:${oppX[s]}px"><span class="av" style="background:${PAL[s]}">${esc(p.name[0] || '?').toUpperCase()}</span><div><span class="n">${esc(p.name)}</span><small>${p.seen ? '<span class="seen">saw maal</span> · ' : ''}${p.total} pts${p.online ? '' : ' · offline'}</small></div></div>`;
     }).join('');
     // ---- opponents' hands (backs) + shown melds
     opps.forEach((s) => {

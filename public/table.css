@@ -1,0 +1,130 @@
+/* Kitty + Jhyap table. Marriage keeps style.css. 8px rhythm; spring = cubic-bezier(.2,1.25,.4,1) */
+#otherTable{--sp8:8px;--brass:#e9b44c;--brass2:#f6d58a;--glass:rgba(8,28,24,.62);position:fixed;inset:0;color:#f9edce;background:#06201c;overflow:hidden;font-family:var(--ui)}
+#otherTable[hidden]{display:none}
+#otherTable #felt{background:
+ radial-gradient(ellipse 62% 50% at 50% 46%,rgba(255,236,170,.16) 0,rgba(255,236,170,0) 62%),
+ radial-gradient(ellipse 85% 75% at 50% 44%,#23705e 0,#14493d 46%,#0a2e27 80%,#04140f 100%)}
+#otherTable #felt::after{inset:6px;border-radius:28px;border:1px solid #e9b44c40;box-shadow:inset 0 0 0 5px #04140f99,inset 0 0 60px #000a}
+#otherTable::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse 100% 90% at 50% 50%,transparent 55%,#000b 100%)}
+#otherTable .mark{opacity:.05}
+/* top bar */
+.otTop{position:absolute;top:8px;left:16px;right:16px;display:flex;gap:8px;align-items:center;z-index:80;pointer-events:none}
+.otTop>*{pointer-events:auto}
+.otTop b{font:800 clamp(18px,3.2vh,26px) Fraunces,Georgia,serif;letter-spacing:.01em;color:var(--brass2);text-shadow:0 2px 6px #000a}
+.otTop span{flex:1;font-size:12px;letter-spacing:.06em;color:#cfe1da}
+.otTop .btn,#otherTable .btn.sm{min-height:32px;padding:4px 14px;font-size:13px;border-radius:99px;background:var(--glass);backdrop-filter:blur(8px);border:1px solid #e9b44c55;box-shadow:0 2px 0 #02100d,inset 0 1px #fff1}
+.otTop .btn:active{transform:translateY(1px) scale(.97)}
+/* physical buttons */
+#otherTable .btn.gold,#otherTable .btn.red{position:relative;border:1px solid #8a5d10;border-radius:14px;min-height:44px;padding:8px 22px;font-weight:800;font-size:15px;letter-spacing:.02em;
+ background:linear-gradient(180deg,#ffe7a8 0,#f0bd5a 48%,#d6962b 100%);color:#2b1a02;text-shadow:0 1px 0 #fff6;
+ box-shadow:0 5px 0 #7a520e,0 9px 16px #000a,inset 0 1px 0 #fffa,inset 0 -2px 0 #0002;transition:transform .18s var(--spring),box-shadow .18s var(--spring),filter .2s,opacity .2s}
+#otherTable .btn.gold:hover:not(:disabled){filter:brightness(1.06)}
+#otherTable .btn.gold:active:not(:disabled),#otherTable .btn.red:active:not(:disabled){transform:translateY(4px);box-shadow:0 1px 0 #7a520e,0 3px 6px #000a,inset 0 1px 0 #fffa}
+#otherTable .btn.red{background:linear-gradient(180deg,#f2566a 0,#c8102e 52%,#8f0a20 100%);color:#fff3d6;border-color:#4d0510;text-shadow:0 1px 0 #0006;box-shadow:0 5px 0 #4d0510,0 9px 16px #000a,inset 0 1px 0 #fff6,inset 0 -2px 0 #0003}
+#otherTable .btn.red:active:not(:disabled){box-shadow:0 1px 0 #4d0510,0 3px 6px #000a}
+#otherTable .btn.gold:disabled,#otherTable .btn.red:disabled{opacity:1;cursor:not-allowed;background:linear-gradient(180deg,#43524e,#2f3b38);color:#98a9a4;border-color:#1c2724;text-shadow:none;box-shadow:0 3px 0 #141c1a,inset 0 1px 0 #fff2;transform:none}
+#otherTable .btn.gold.lit:not(:disabled),#otherTable .btn.red.lit:not(:disabled){animation:btnglow 1.6s ease-in-out infinite}
+@keyframes btnglow{50%{filter:brightness(1.12) drop-shadow(0 0 10px #f6d58aaa)}}
+/* layers */
+#kLayer{position:absolute;inset:0;pointer-events:none;display:none}
+#otherTable[data-game=kitty] #kLayer,#otherTable[data-game=jhyap] #kLayer,#otherTable.dealing #kLayer{display:block}
+#otherTable[data-game=jhyap] #kLayer .mark{display:none}
+#otherTable[data-game=jhyap] #otPlayers,#otherTable[data-game=jhyap] #otStatus,#otherTable[data-game=jhyap] #otRows,#otherTable[data-game=jhyap] #otPile,#otherTable[data-game=jhyap] #otActions,#otherTable[data-game=jhyap] #otCards,#otherTable[data-game=jhyap] #otResult,
+#otherTable[data-game=kitty] #otPlayers,#otherTable[data-game=kitty] #otStatus,#otherTable[data-game=kitty] #otRows,#otherTable[data-game=kitty] #otPile,#otherTable[data-game=kitty] #otActions,#otherTable[data-game=kitty] #otCards,#otherTable[data-game=kitty] #otResult{display:none}
+#kPods{position:absolute;inset:0;z-index:20;pointer-events:none}
+#kCards{position:absolute;inset:0;z-index:10;pointer-events:none}
+#kLabels{position:absolute;inset:0;z-index:12;pointer-events:none}
+#kActions{position:absolute;left:0;right:0;z-index:30;display:flex;justify-content:center;align-items:center;gap:8px}
+#kActions[hidden]{display:none}
+#kActions button{pointer-events:auto}
+#kHint{font-size:12px;font-weight:700;color:var(--brass2);text-shadow:0 1px 3px #000}
+#otherTable[data-game=jhyap] #kActions{left:auto;right:16px;flex-direction:column;align-items:stretch;gap:12px;width:min(260px,30vw)}
+#otherTable[data-game=jhyap] #kActions .btn{white-space:normal;line-height:1.15;text-align:center}
+#otherTable[data-game=jhyap] #kActions .btn small{display:block;font-size:11px;font-weight:600;opacity:.85;letter-spacing:0}
+/* glass name pods */
+#otherTable .pod{position:absolute;translate:-50% 0;display:flex;align-items:center;gap:8px;height:32px;padding:0 12px 0 4px;border-radius:99px;max-width:44vw;
+ background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03)),var(--glass);backdrop-filter:blur(10px);border:1px solid #ffffff2a;box-shadow:0 6px 16px #0008,inset 0 1px #ffffff30;
+ transition:box-shadow .35s var(--spring),border-color .35s,transform .45s var(--spring),opacity .3s}
+#otherTable .pod.enter{animation:springIn .55s var(--spring) both}
+#otherTable .pod .av{width:24px;height:24px;font-size:12px;box-shadow:0 0 0 2px #0006,inset 0 -3px 5px #0003}
+#otherTable .pod .n{font-weight:700;font-size:13px;max-width:12ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#otherTable .pod .chip{font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;background:#02120f;color:var(--brass2);border:1px solid #e9b44c55;font-variant-numeric:tabular-nums;white-space:nowrap}
+#otherTable .pod .chip.neg{color:#ff9d8f}
+#otherTable .pod.off{opacity:.5}
+#otherTable .pod.me{translate:0 0;left:14px;bottom:10px;top:auto}
+#otherTable .pod.turn{border-color:var(--brass);transform:scale(1.07);animation:turnpulse 1.5s ease-in-out infinite}
+@keyframes turnpulse{0%,100%{box-shadow:0 0 0 2px #e9b44c88,0 0 14px #e9b44c88,0 6px 16px #0008}50%{box-shadow:0 0 0 4px #f6d58acc,0 0 30px #f6d58a,0 6px 16px #0008}}
+@keyframes springIn{from{opacity:0;transform:translateY(-8px) scale(.82)}}
+#otherTable .pod.win{border-color:#f6d58a;box-shadow:0 0 0 3px #f6d58acc,0 0 28px #f6d58a,0 6px 16px #0008}
+body.reacting #otherTable .pod{pointer-events:auto;cursor:pointer}
+#otherTable .pod.aim{outline:2px dashed #fff;outline-offset:3px}
+/* turn banner */
+#turnBanner{position:absolute;left:50%;translate:-50% 0;z-index:25;padding:0 24px;height:34px;display:flex;align-items:center;gap:8px;border-radius:99px;white-space:nowrap;pointer-events:none;
+ font:800 clamp(15px,3.4vh,28px) Fraunces,Georgia,serif;letter-spacing:.02em;
+ background:var(--glass);backdrop-filter:blur(10px);border:1px solid #ffffff2a;color:#dcebe5;box-shadow:0 6px 18px #0008,inset 0 1px #fff2;opacity:.92}
+#turnBanner small{font:600 12px var(--ui);letter-spacing:0;opacity:.8}
+#turnBanner.in{animation:bannerIn .6s var(--spring) both}
+#turnBanner.me{background:linear-gradient(180deg,#ffe7a8,#e9b44c);color:#2b1a02;border-color:#fff8;opacity:1;box-shadow:0 0 0 2px #f6d58a88,0 0 32px #e9b44caa,0 8px 20px #000a;animation:bannerIn .6s var(--spring) both,turnpulse 1.5s ease-in-out .6s infinite}
+#turnBanner[hidden]{display:none}
+@keyframes bannerIn{from{opacity:0;transform:translateY(10px) scale(.7)}}
+/* Kitty banner: slim strip along the top */
+#kBanner{position:absolute;left:50%;top:10px;translate:-50% 0;z-index:70;padding:2px 14px;border-radius:99px;background:var(--glass);backdrop-filter:blur(8px);border:1px solid #e9b44c66;font:700 13px var(--ui);white-space:nowrap;max-width:min(36vw,520px);overflow:hidden;text-overflow:ellipsis;text-align:center;pointer-events:none}
+/* labels */
+#kLabels .gl{text-transform:none;letter-spacing:0}
+#kLabels .winl{position:absolute;padding:2px 10px;border-radius:99px;background:linear-gradient(180deg,#ffe7a8,#e9b44c);color:#2a1a00;font-weight:800;font-size:12px;white-space:nowrap;translate:-50% -100%;animation:springIn .5s var(--spring) both}
+#kLabels .cap{position:absolute;translate:-50% 0;font:700 10px var(--ui);letter-spacing:.12em;text-transform:uppercase;color:#cfe1da;opacity:.75;white-space:nowrap}
+#kLabels .pts{position:absolute;translate:-50% -100%;padding:2px 10px;border-radius:99px;font:800 13px var(--ui);background:#02120fdd;border:1px solid #ffffff33;color:#fff;white-space:nowrap;font-variant-numeric:tabular-nums;animation:springIn .5s var(--spring) both}
+#kLabels .pts.w{background:linear-gradient(180deg,#ffe7a8,#e9b44c);color:#2a1a00;border-color:#fff8;box-shadow:0 0 16px #f6d58a}
+#kLabels .pts.o{background:#02120fdd}
+.card.win .f{filter:drop-shadow(0 0 10px #f6d58a) drop-shadow(0 10px 12px #000c)}
+#otherTable .card .f{filter:drop-shadow(0 1px 1px #0009) drop-shadow(0 6px 8px #000a)}
+#otherTable .card.sel .f{filter:drop-shadow(0 0 7px #f6d58a) drop-shadow(0 8px 10px #000b)}
+#otherTable .card.tap{pointer-events:auto;cursor:pointer}
+#otherTable .card.can .f{filter:drop-shadow(0 0 8px #f6d58a) drop-shadow(0 6px 8px #000b)}
+#otherTable .card.dim .f{filter:brightness(.7) drop-shadow(0 4px 5px #000a)}
+/* round strip: slim column on the right edge, never over the cards */
+#kStrip{position:absolute;right:12px;top:48px;z-index:40;width:min(176px,22vw);max-height:calc(100% - 64px - var(--ch));display:flex;flex-direction:column;gap:6px;padding:8px 10px;border-radius:16px;overflow:hidden;
+ background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.02)),rgba(4,20,16,.82);backdrop-filter:blur(10px);border:1px solid #e9b44c66;box-shadow:0 10px 28px #000a,inset 0 1px #fff2;font-size:12px;pointer-events:auto;animation:stripIn .6s var(--spring) both}
+@keyframes stripIn{from{opacity:0;transform:translateX(40px)}}
+#kStrip[hidden]{display:none}
+#kStrip strong{font:800 15px Fraunces,Georgia,serif;color:var(--brass2);line-height:1.15}
+#kStrip .why{font-size:11px;color:#cfe1da;line-height:1.25}
+#kStrip .rbs{display:flex;flex-direction:column;gap:3px}
+#kStrip .rb{display:flex;justify-content:space-between;gap:6px;white-space:nowrap}
+#kStrip .rb b{overflow:hidden;text-overflow:ellipsis;max-width:9ch}
+#kStrip .rb.w b{color:var(--brass2)}
+#kStrip .up{color:#4be07a;font-style:normal;font-weight:800}#kStrip .dn{color:#ff8f8f;font-style:normal;font-weight:800}
+#kStrip small{color:#9fc2b6}
+#kStrip .btn{min-height:34px;padding:6px 10px;font-size:13px;border-radius:12px}
+/* sheet (scores / rules) */
+#otSheet{position:absolute;inset:0;z-index:200;display:grid;place-items:center;background:#000a;backdrop-filter:blur(5px);animation:fade .25s}
+#otSheet[hidden]{display:none}
+#otSheet .sheetp{width:min(520px,92vw);max-height:88%;overflow:auto;padding:16px 20px;border-radius:20px;background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.02)),rgba(6,28,24,.94);border:1px solid #e9b44c88;box-shadow:0 30px 80px #000c,inset 0 1px #fff2;animation:rise .45s var(--spring)}
+#otSheet h2{font:800 22px Fraunces,Georgia,serif;margin:0 0 8px;color:var(--brass2)}
+#otSheet p{font-size:13px;line-height:1.45;margin:6px 0;color:#e8f1ed}
+#otSheet .srow{display:flex;justify-content:space-between;padding:6px 8px;border-radius:10px;background:#ffffff0a;margin:4px 0;font-size:13px}
+#otSheet .srow b{color:var(--brass2)}
+#otSheet .btn{margin-top:8px}
+/* emoji reactions (all three tables) */
+.rxbtn{min-width:34px;height:30px;padding:0 10px;border-radius:99px;border:1px solid #e9b44c55;background:#0007;cursor:pointer;font-size:16px;line-height:1;margin-left:6px;transition:transform .2s var(--spring)}
+.rxbtn:active{transform:scale(.9)}.rxbtn[disabled]{opacity:.45}
+.otTop .rxbtn{margin:0}
+#rxTray{position:fixed;right:12px;top:44px;z-index:500;padding:8px 8px 6px;border-radius:18px;background:rgba(6,28,24,.94);backdrop-filter:blur(12px);border:1px solid #e9b44c88;box-shadow:0 18px 44px #000b,inset 0 1px #fff2;display:grid;gap:6px;transform-origin:top right;animation:rxIn .35s var(--spring)}
+#rxTray[hidden]{display:none}
+@keyframes rxIn{from{opacity:0;transform:scale(.6)}}
+#rxTray .tg{display:flex;gap:6px;flex-wrap:wrap}
+#rxTray .tg button{border:1px solid #ffffff2a;background:#ffffff12;color:#f9edce;border-radius:99px;padding:2px 10px;font:600 11px var(--ui);cursor:pointer}
+#rxTray .tg button.on{background:#e9b44c;color:#2b1a02;border-color:#fff8}
+#rxTray .em{display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
+#rxTray .em button{width:36px;height:34px;font-size:22px;border:0;background:none;border-radius:10px;cursor:pointer;transition:transform .15s var(--spring),background .15s}
+#rxTray .em button:hover{background:#ffffff1c;transform:scale(1.2)}
+#rxTray .em button:active{transform:scale(.9)}
+#rxTray .hint{font-size:10px;margin:0;text-align:center;color:#9fc2b6}
+.rxfly{position:fixed;left:0;top:0;z-index:600;font-size:34px;pointer-events:none;will-change:transform;filter:drop-shadow(0 4px 6px #0009)}
+@media(max-height:500px){.otTop b{font-size:17px}.otTop .btn{min-height:28px;padding:2px 10px;font-size:12px}#otherTable .btn.gold,#otherTable .btn.red{min-height:36px;padding:5px 16px;font-size:14px}#turnBanner{height:24px;padding:0 14px}#turnBanner small{display:none}#kStrip{top:44px;width:min(128px,18vw);font-size:11px;gap:4px;padding:6px 8px}#kStrip strong{font-size:13px}#kStrip .btn{min-height:28px;font-size:12px}#rxTray .em button{width:30px;height:28px;font-size:18px}}
+@media(max-width:520px){.otTop{top:4px;left:8px;right:8px;gap:4px;flex-wrap:wrap}.otTop span{flex-basis:100%}}
+@media(prefers-reduced-motion:reduce){#otherTable .pod,#turnBanner,#kStrip,#rxTray,#kLabels *{animation:none!important}}
+#kBanner:empty{display:none}
+#otherTable[data-game=jhyap] .kit,#otherTable[data-game=kitty] .jh{display:none}
+body.reacting .pod{pointer-events:auto!important;cursor:pointer}
+@media(min-height:700px){#otherTable .btn.gold,#otherTable .btn.red{min-height:58px;font-size:19px;border-radius:16px}#otherTable[data-game=jhyap] #kActions{width:min(300px,26vw)}#kHint{font-size:14px}#otherTable .pod{height:40px}#otherTable .pod .av{width:30px;height:30px;font-size:14px}#otherTable .pod .n{font-size:16px}#otherTable .pod .chip{font-size:13px}#turnBanner{height:44px}#kStrip{font-size:14px;width:min(220px,16vw)}#kStrip strong{font-size:18px}}
