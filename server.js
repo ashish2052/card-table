@@ -161,7 +161,7 @@ setInterval(() => {
 }, 4000);
 
 // One card every 110ms, then the flip. Bots wait so a round cannot finish during the deal.
-const DEAL_GAP = 110, DEAL_FLIGHT = 550;
+const DEAL_GAP = 145, DEAL_FLIGHT = 650;
 function dealHold(r, g) {
   if (!g || !g.ev || g.ev.k !== 'deal') return 0;
   const n = r.type === 'marriage' ? g.n : ((g.active && g.active.length) || g.n);

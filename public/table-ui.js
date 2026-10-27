@@ -38,6 +38,12 @@ style.textContent=`#otherTable{position:fixed;inset:0;color:#f9edce;background:#
 #kActions button{pointer-events:auto}
 #kStrip{position:absolute;left:50%;bottom:8px;translate:-50% 0;z-index:40;display:flex;gap:10px;align-items:center;background:#061c18ee;border:1px solid #e9b44c;border-radius:999px;padding:4px 6px 4px 14px;font-size:13px;max-width:96vw;pointer-events:auto;white-space:nowrap}
 #kStrip[hidden]{display:none}
+#kStrip{border-radius:14px;padding:6px 10px;gap:6px 12px;flex-wrap:wrap;justify-content:center;white-space:normal;box-shadow:0 0 24px #e9b44c55}
+#kStrip strong{font-size:16px;color:#f6d58a;flex-basis:100%;text-align:center}
+#kStrip .rbs{display:flex;gap:6px 14px;flex-wrap:wrap;justify-content:center}
+#kStrip .rb.w b{color:#f6d58a}#kStrip .up{color:#4be07a;font-style:normal;font-weight:800}#kStrip .dn{color:#ff6b6b;font-style:normal;font-weight:800}#kStrip small{color:#cfe1da}
+.pod.win{border-color:#f6d58a;box-shadow:0 0 0 3px #f6d58acc,0 0 30px #f6d58a}
+#kLabels .winl{position:absolute;width:auto;padding:2px 10px;border-radius:99px;background:#e9b44c;color:#2a1a00;font-weight:800;font-size:12px;white-space:nowrap;translate:-50% -100%}
 #kStrip em{color:#f6d58a;font-style:normal;font-weight:700}
 .card.win .f{filter:drop-shadow(0 0 10px #f6d58a) drop-shadow(0 10px 12px #000c)}
 @media(max-height:500px){.otTop b{font-size:16px}#otPlayers{top:46px}#otStatus{top:78px}#otRows{top:105px}.otRow{width:220px}.otRow span{width:160px;font-size:11px}#otResult{inset:82px 10% 52px}#kBanner{top:6px;font-size:12px;max-width:42vw}}
@@ -224,7 +230,7 @@ $('#kReady').onclick=()=>{if(!canTouch())return;send({t:'ready',groups:rows.map(
 function paintPods(pulse){
   $('#kPods').innerHTML=geo.opps.map(s=>{
     const p=S.players[s],wait=S.phase==='play'&&!S.ready[s];
-    return `<div class="pod${pulse===s?' turn':''}${p.online?'':' off'}" data-seat="${s}" style="left:${geo.oppX[s]}px;top:${geo.podY}px"><span class="av" style="background:${PAL[s]}">${esc((p.name||'?')[0]).toUpperCase()}</span><div><span class="n">${esc(p.name)}</span><small>${p.total} pts${wait?' · waiting':''}</small></div></div>`;
+    return `<div class="pod${pulse===s?(['slide','flip','hold','result'].includes(stage)?' turn win':' turn'):''}${p.online?'':' off'}" data-seat="${s}" style="left:${geo.oppX[s]}px;top:${geo.podY}px"><span class="av" style="background:${PAL[s]}">${esc((p.name||'?')[0]).toUpperCase()}</span><div><span class="n">${esc(p.name)}</span><small>${p.total} pts${wait?' · waiting':''}</small></div></div>`;
   }).join('');
 }
 function setBanner(main,sub){
@@ -282,7 +288,7 @@ function layoutPlay(){
   });
   $('#kLabels').innerHTML=html;
 }
-const DEAL_GAP=110,FLIGHT=550;
+const DEAL_GAP=145,FLIGHT=650;
 const reduceMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 function dealSeats(){
   const n=S.players.length,seats=[];
@@ -409,38 +415,47 @@ async function playShowdown(){
     const tie=isTie(show);
     winSeat=tie?-1:res.hands[show].winner;
     showN=show;stage='slide';if(!showAt[show])showAt[show]=Date.now();
-    const wname=S.players[res.hands[show].winner].name;
+    const ws=res.hands[show].winner,wname=ws===S.you?'You':S.players[ws].name;
     const title=longName(rev[res.hands[show].winner][show]);
-    setBanner(tie?'Carry':wname+' wins Show '+(show+1)+' - '+title, tie?'tie - the show carries over':'');
+    setBanner(tie?'Carry':wname+(ws===S.you?' win':' wins')+' Show '+(show+1)+' - '+title, tie?'tie - the show carries over':'');
     paintPods(winSeat);
     for(let p=0;p<show;p++)putCards(p,'home',false,false);
     putCards(show,'center',true,false);
     placeNow=()=>{layoutGeo();for(let p=0;p<show;p++)putCards(p,'home',false,false);putCards(show,'center',true,false);paintPods(winSeat)};
-    await wait(580);
+    await wait(700);
     if(token!==showToken)return;
     stage='flip';
     putCards(show,'center',false,!tie);
     Sfx.show();
+    if(!tie)showWinLabel(res.hands[show].winner,show);
     placeNow=()=>{layoutGeo();for(let p=0;p<show;p++)putCards(p,'home',false,false);putCards(show,'center',false,!tie);paintPods(winSeat)};
-    await wait(480);
+    await wait(700);
     if(token!==showToken)return;
     stage='hold';
-    await wait(1200);
+    await wait(1100);
     if(token!==showToken)return;
-    kspr.forEach(sp=>sp.el.classList.remove('win'));
+    kspr.forEach(sp=>sp.el.classList.remove('win'));$('#kLabels').innerHTML='';
   }
+  await wait(900);
   if(token!==showToken)return;
   winSeat=res.winner;paintPods(winSeat>=0?winSeat:-1);
-  stage='result';showN=3;showStrip();Sfx.win();
+  stage='result';showN=3;setBanner('Round over');showStrip();Sfx.win();
   placeNow=()=>{layoutGeo();for(let p=0;p<2;p++)putCards(p,'home',false,false);putCards(2,'center',false,false);paintPods(winSeat)};
+}
+function showWinLabel(seat,show){
+  const t=centerPos(seat,1);
+  $('#kLabels').innerHTML=`<div class="gl winl" style="left:${t.x}px;top:${t.y-ch*0.36-Math.min(26,ch*0.16)}px">Wins show ${show+1}</div>`;
 }
 function showStrip(){
   const r=S.result;if(!r)return;
-  const bits=(r.rows||[]).map(row=>esc(S.players[row.seat].name)+' '+(row.net>0?'+':'')+row.net).join('   ·   ');
-  $('#kStrip').hidden=false;
-  $('#kStrip').style.bottom='auto';
-  $('#kStrip').style.top=Math.min(geo.handTop-42, geo.cy+ch*0.4)+'px';
-  $('#kStrip').innerHTML=`<span>${bits}</span><em>${esc(r.kind||'')}</em><button class="btn gold" id="kNext" type="button">Deal next round</button>`;
+  const rows=(r.rows||[]).slice().sort((a,b)=>(b.seat===r.winner)-(a.seat===r.winner)||b.net-a.net);
+  const nm=q=>q===S.you?'You':esc(S.players[q].name);
+  const head=r.winner>=0?(r.winner===S.you?'You win the round':esc(S.players[r.winner].name)+' wins the round'):'Round carried - no winner';
+  const bits=rows.map(row=>`<span class="rb${row.seat===r.winner?' w':''}"><b>${nm(row.seat)}</b> <i class="${row.net>0?'up':row.net<0?'dn':''}">${row.net>0?'+':''}${row.net}</i> <small>total ${S.players[row.seat].total}</small></span>`).join('');
+  const k=$('#kStrip');
+  k.hidden=false;k.style.bottom='auto';
+  k.style.top=Math.min(geo.handTop-58, geo.cy+ch*0.35)+'px';
+  k.innerHTML=`<strong>${head}</strong><div class="rbs">${bits}</div><button class="btn gold" id="kNext" type="button">Deal next round</button>`;
   $('#kNext').onclick=()=>send({t:'next'});
 }
 function paintKitty(){
