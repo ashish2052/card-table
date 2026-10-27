@@ -160,11 +160,20 @@ setInterval(() => {
   }
 }, 4000);
 
+// One card every 110ms, then the flip. Bots wait so a round cannot finish during the deal.
+const DEAL_GAP = 110, DEAL_FLIGHT = 550;
+function dealHold(r, g) {
+  if (!g || !g.ev || g.ev.k !== 'deal') return 0;
+  const n = r.type === 'marriage' ? g.n : ((g.active && g.active.length) || g.n);
+  const count = r.type === 'kitty' ? 9 : r.type === 'jhyap' ? 5 : 21;
+  return ((count - 1) * n + Math.max(0, n - 1)) * DEAL_GAP + DEAL_FLIGHT + 520;
+}
 // computer players take their turn about a second after it comes round
 setInterval(() => {
   for (const r of rooms.values()) {
     const g = r.g;
     if (r.phase !== 'play' || !g || g.over) continue;
+    if (Date.now() - (g.turnSince || 0) < dealHold(r, g)) continue;
     if(r.type!=='marriage'){
       // Kitty computers wait until every online human has pressed Ready.
       if(r.type==='kitty' && r.players.some(p=>!p.bot && p.online && !g.ready[p.seat])) continue;

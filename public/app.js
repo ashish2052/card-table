@@ -12,7 +12,10 @@
   }
 
   let ws, S = null, session = JSON.parse(localStorage.getItem('marriage.session') || 'null');
-  let groups = [], sel = new Set(), lastEv = -1, firstRender = true, curRound = -1, sheetRound = -1, pass = 0, pendingSend = 0;
+  let groups = [], sel = new Set(), lastEv = -1, firstRender = true, curRound = -1, sheetRound = -1, pass = 0, pendingSend = 0, dealUntil = 0, playedDeal = -1;
+  const DEAL_GAP = 110, FLIGHT = 550;
+  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const seatDelay = (seat, k, n) => ((k * n + ((seat - S.dealer - 1 + n) % n)) * DEAL_GAP);
   const sprites = new Map();
   let vw = 0, vh = 0, cw = 66, ch = 92, geo = {}, drag = null;
   const me = () => S.you;
@@ -66,6 +69,7 @@
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     location.href = '/';
   }
+  window.leaveGame = leave;
   $('#bExit').onclick = () => leave(true);
   $('#leave').onclick = () => leave(false);
   // browser Back leaves the room instead of doing nothing (the app is one page, so there is no history otherwise)
@@ -98,14 +102,16 @@
     if (S.phase === 'lobby') { show('lobby'); renderLobby(); return; }
     show('game');
     if (S.round !== curRound) { // new round: wipe the table, deal animation follows from the event
-      curRound = S.round; sprites.forEach((s) => s.el.remove()); sprites.clear(); groups = []; sel.clear(); $('#sheet').hidden = true; firstRender = firstRender && !prev;
+      curRound = S.round; dealUntil = 0; sprites.forEach((s) => s.el.remove()); sprites.clear(); groups = []; sel.clear(); $('#sheet').hidden = true; firstRender = firstRender && !prev;
     }
     const ev = S.ev || { n: 0 };
     const fresh = !firstRender && ev.n > lastEv;
-    const isNew = fresh || (!prev && false);
+    const openingDeal = S.phase === 'play' && ev.k === 'deal' && playedDeal !== S.round && !reduceMotion();
+    if (openingDeal) playedDeal = S.round;
+    const showEv = openingDeal ? ev : (fresh ? ev : null);
     reconcile(false);
-    layout(fresh ? ev : null);
-    soundFor(fresh ? ev : null, prev);
+    layout(showEv);
+    soundFor(showEv, prev);
     lastEv = ev.n; firstRender = false;
     renderChrome();
     if (S.phase === 'over' && sheetRound !== S.round) { sheetRound = S.round; setTimeout(() => { if (S.phase === 'over') { renderSheet(); confetti(); } }, firstRender ? 0 : 1300); }
@@ -113,7 +119,10 @@
   function soundFor(ev, prev) {
     if (!ev) return;
     const n = S.players.length;
-    if (ev.k === 'deal') { for (let i = 0; i < Math.min(21 * n, 120); i += 2) setTimeout(() => Sfx.deal(i), i * 26); }
+    if (ev.k === 'deal') {
+      if (reduceMotion()) Sfx.deal(0);
+      else { const cards = 21 * n; for (let i = 0; i < cards; i++) setTimeout(() => Sfx.deal(i), i * DEAL_GAP); }
+    }
     else if (ev.k === 'drawStock' || ev.k === 'drawDiscard') Sfx.flick();
     else if (ev.k === 'discard') { Sfx.place(); if (S.turn === me()) setTimeout(Sfx.turn, 250); }
     else if (ev.k === 'show') Sfx.show();
@@ -180,8 +189,8 @@
       setT(el, o.from || t); void el.offsetWidth; el.classList.remove('nt');
       sp = { el, key, card, mk: undefined, down: !!o.down, f: el.querySelector('.f') };
       sprites.set(key, sp);
-      if (o.delay) { el.style.transitionDelay = o.delay + 'ms'; el.firstChild.style.transitionDelay = o.delay + 250 + 'ms'; }
-      if (o.down && o.reveal) setTimeout(() => el.classList.remove('down'), (o.delay || 0) + 40);
+      if (o.delay) el.style.transitionDelay = o.delay + 'ms';
+      if (o.down && o.reveal && !o.instant) setTimeout(() => { if (el.isConnected) el.classList.remove('down'); }, (o.delay || 0) + (o.revealAfter == null ? 40 : o.revealAfter));
       if (o.instant) { el.classList.add('nt'); setT(el, t); void el.offsetWidth; el.classList.remove('nt'); }
     }
     sp.mark = pass; sp.t = t;
@@ -214,7 +223,8 @@
     pass++; sizes();
     const n = S.players.length, mySeat = me(), hand = byId();
     S.seenMe = S.players[mySeat].seen;
-    const instant = firstRender, dealing = ev && ev.k === 'deal';
+    const dealing = !!(ev && ev.k === 'deal' && !reduceMotion()), instant = (firstRender && !dealing) || reduceMotion();
+    if (dealing && !dealUntil) dealUntil = Date.now() + ((20 * n + (n - 1)) * DEAL_GAP + FLIGHT + 200);
     // ---- table geometry
     const opps = []; for (let k = 1; k < n; k++) opps.push((mySeat + k) % n);
     const backsY = 40 + ch * 0.55 + 10, rowH = ch * 0.34;
@@ -233,12 +243,11 @@
       return `<div class="pod${S.turn === s && S.phase === 'play' ? ' turn' : ''}${p.online ? '' : ' off'}" style="left:${oppX[s]}px"><span class="av" style="background:${PAL[s]}">${esc(p.name[0] || '?').toUpperCase()}</span><div><span class="n">${esc(p.name)}</span><small>${p.seen ? '<span class="seen">saw maal</span> · ' : ''}${p.total} pts${p.online ? '' : ' · offline'}</small></div></div>`;
     }).join('');
     // ---- opponents' hands (backs) + shown melds
-    const dealRel = (s) => (s - S.dealer - 1 + n) % n;
     opps.forEach((s) => {
       const p = S.players[s], nb = Math.min(p.count, 10), fromStock = geo.stock;
       for (let k = 0; k < nb; k++) {
         const t = { x: oppX[s] + (k - (nb - 1) / 2) * cw * 0.1, y: backsY, r: (k - (nb - 1) / 2) * 2.2, s: 0.34, z: 30 + k };
-        sprite('o' + s + '_' + k, null, t, { down: true, from: { ...fromStock, s: 0.34, r: 0 }, delay: dealing ? (k * n + dealRel(s)) * 26 : 0, instant });
+        sprite('o' + s + '_' + k, null, t, { down: true, from: { ...fromStock, s: 0.34, r: 0 }, delay: dealing ? seatDelay(s, k, n) : 0, instant });
       }
       layoutMelds(p.shown, oppX[s], backsY + rowH + 6, 0.3, 'center', s, instant, geo.stock);
     });
@@ -263,16 +272,16 @@
     const { pos, step } = handPos(gs);
     geo.step = step;
     const lastId = S.last ? S.last.id : null;
-    const handIds = new Set(S.handFlat.map((c) => c.id));
+    const dealtAt = new Map(S.handFlat.map((c, i) => [c.id, i]));
     pos.forEach((p, id) => {
       const c = hand.get(id); if (!c) return;
       const selected = sel.has(id), isNew = id === lastId && S.step === 'discard';
       const lift = selected ? ch * 0.3 : isNew ? ch * 0.12 : 0;
       const sp0 = sprites.get('c' + id);
       const spawn = dealing ? { ...geo.stock, s: 0.9, r: 0 } : ev && ev.k === 'drawStock' && ev.seat === mySeat && id === lastId ? { ...geo.stock, s: 1, r: 0 } : undefined;
-      const delay = dealing ? (p.k * n + dealRel(mySeat)) * 26 : 0;
+      const delay = dealing ? seatDelay(mySeat, dealtAt.has(id) ? dealtAt.get(id) : p.k, n) : 0;
       const m = mark(c);
-      sprite('c' + id, c, { x: p.x, y: p.y - lift, r: p.r, s: 1, z: p.z + (selected ? 300 : 0) }, { mine: true, sel: selected, fresh: isNew, mk: m, wild: !!m && (S.seenMe || c.s === 'J'), from: spawn, down: !!spawn && !sp0, reveal: !!spawn && !sp0, delay, instant });
+      sprite('c' + id, c, { x: p.x, y: p.y - lift, r: p.r, s: 1, z: p.z + (selected ? 300 : 0) }, { mine: true, sel: selected, fresh: isNew, mk: m, wild: !!m && (S.seenMe || c.s === 'J'), from: spawn, down: !!spawn && !sp0, reveal: !!spawn && !sp0, revealAfter: dealing ? FLIGHT : undefined, delay, instant });
     });
     drawLabels(gs, pos);
     // ---- retire sprites that left
@@ -285,7 +294,7 @@
       } else if (drag && drag.id === sp.card?.id) { /* in hand of finger */ }
       else { sp.el.remove(); sprites.delete(key); }
     });
-    if (dealing) setTimeout(() => sprites.forEach((s) => { s.el.style.transitionDelay = ''; s.el.firstChild.style.transitionDelay = ''; }), 21 * n * 26 + 1200);
+    if (dealing) setTimeout(() => sprites.forEach((s) => { s.el.style.transitionDelay = ''; if (s.el.firstChild) s.el.firstChild.style.transitionDelay = ''; }), (20 * n + (n - 1)) * DEAL_GAP + FLIGHT + 700);
     positionChrome();
   }
   function place(el, c, w, h) { el.style.left = c.x - w / 2 + 'px'; el.style.top = c.y - h / 2 + 'px'; el.style.width = w + 'px'; }
@@ -348,16 +357,18 @@
     if (!S || !S.handFlat) return;
     const turnName = S.players[S.turn].name;
     let b = '';
+    const locked = Date.now() < dealUntil;
     if (S.phase === 'over') b = S.result && S.result.void ? 'Round void: stock ran out' : `${S.players[S.result.winner].name} won the round`;
+    else if (locked) b = 'Dealing';
     else if (myTurn()) b = S.step === 'draw' ? 'Your turn: draw from the stock or the pile' : 'Now throw one card away';
     else b = `${turnName} is ${S.step === 'draw' ? 'drawing' : 'choosing a discard'}...`;
     const bn = $('#banner'); bn.textContent = b; bn.classList.toggle('me', myTurn());
     $('#gcode').textContent = S.code; $('#ground').textContent = 'Round ' + S.round + ' · you ' + S.players[me()].total + ' pts' + (S.seenMe ? ' · maal seen' : '');
     $('#stockCount').textContent = S.stock;
-    $('#stockSlot').classList.toggle('can', myTurn() && S.step === 'draw');
-    $('#discSlot').classList.toggle('can', myTurn() && S.step === 'draw' && S.discardCount > 0);
+    $('#stockSlot').classList.toggle('can', !locked && myTurn() && S.step === 'draw');
+    $('#discSlot').classList.toggle('can', !locked && myTurn() && S.step === 'draw' && S.discardCount > 0);
     // buttons
-    const canDisc = myTurn() && S.step === 'discard';
+    const canDisc = !locked && myTurn() && S.step === 'discard';
     const selIds = [...sel].filter((i) => S.handFlat.some((c) => c.id === i));
     $('#aGroup').hidden = selIds.length < 2;
     $('#aSplit').hidden = !selIds.length || !groups.some((g) => g.length > 1 && g.some((i) => sel.has(i)));
@@ -422,6 +433,7 @@
 
   // ------------------------------------------------------------ pointer: tap to select, drag to reorder / discard
   cardsEl.addEventListener('pointerdown', (e) => {
+    if (Date.now() < dealUntil) return;
     const el = e.target.closest('.card.mine'); if (!el || drag) return;
     Sfx.unlock();
     const id = +el.dataset.id, sp = sprites.get('c' + id);
