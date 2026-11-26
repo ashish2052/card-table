@@ -119,7 +119,7 @@ class Game {
     }
     this.removeFromHand(seat, flat);
     this.shown[seat] = groups.map((g) => g.map(byId));
-    this.seen[seat] = true; // pagat: the maal is seen the moment the three are laid down, before the throw
+    this.pendingSee[seat] = true; // Bhoos / Nepali tables: show, throw a card, then see the maal
     this.event('show', seat);
   }
   declare(seat, groups, discardId) {
