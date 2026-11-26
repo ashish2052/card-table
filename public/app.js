@@ -346,7 +346,7 @@
     const all = [...S.handFlat, ...S.players[me()].shown.flat()];
     const dub = R.countDublees(all) >= S.opts.dubleeWin;
     const threes = groups.filter((g) => g.length === 3), singles = groups.filter((g) => g.length === 1);
-    let melds = groups.length === threes.length + singles.length && threes.length === 7 - k && singles.length === 1;
+    let melds = groups.length === threes.length + singles.length && threes.length === 7 - k && singles.length === 1 && threes.every((g) => classifyGroup(g).valid);
     autoDecl = null;
     if (!melds) { // the hand wins even if it isn't laid out in groups: find the melds for him
       const ag = R.autoGroup(S.handFlat, S.tiplu || null);
