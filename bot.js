@@ -78,7 +78,8 @@ function bestThrow(hand, t, seen, took) {
   let best = null, bv = -1e9;
   for (const c of hand) {
     if (c.id === took) continue;
-    if (seen && R.isWild(c, t) && hand.some((x) => x.id !== took && !R.isWild(x, t))) continue; // maal seen: never throw maal while a plain card can go
+    if (seen && R.isWild(c, t) && hand.some((x) => x.id !== took && !R.isWild(x, t))) continue;
+    if (!seen && c.s === 'J' && hand.some((x) => x.id !== took && x.s !== 'J')) continue; // man is maal for everyone: keep it even before seeing // maal seen: never throw maal while a plain card can go
     const v = evalHand(hand.filter((x) => x.id !== c.id), t, seen) - (feeds(c) ? 3 : 0);
     if (v > bv) { bv = v; best = c; }
   }

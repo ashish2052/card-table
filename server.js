@@ -2,7 +2,7 @@
 const http = require('http'), fs = require('fs'), path = require('path'), os = require('os'), crypto = require('crypto');
 const { WebSocketServer } = require('ws');
 const { Game, byId } = require('./game.js');
-const Bot = require('./bot.js');
+const Bot = require('./bot.js'), R = require('./public/rules.js');
 const T = require('./table-games.js');
 
 const PORT = +process.env.PORT || 8850;
@@ -60,6 +60,11 @@ class Room {
     return v;
   }
   act(p, m) {
+    if (this.type === 'marriage' && ['draw', 'discard', 'show', 'declare'].includes(m.t)) { // move log, readable in the Render logs
+      const c = (id) => { try { return R.label(byId(id)); } catch (e) { return id; } };
+      const g = this.g, seen = g && g.seen ? (g.seen[p.seat] ? 'seen' : 'unseen') : '';
+      console.log(`MOVE ${this.code} r${this.round} ${p.name} ${seen} ${m.t} ${m.from || ''}${m.id !== undefined ? c(m.id) : ''}${m.discard !== undefined ? c(m.discard) : ''}${m.groups ? ' ' + m.groups.map((x) => x.map(c).join('-')).join(' ') : ''}`);
+    }
     const g = this.g;
     if(this.type!=='marriage' && !['start','addbot','opts','next'].includes(m.t)) { if(!g)throw uerr('Deal first'); g.act(p.seat,m); } else switch (m.t) {
       case 'start':
