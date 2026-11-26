@@ -31,7 +31,7 @@
   }
   const isWild = (c, t) => kind(c, t) !== null;
 
-  const isTunnela = (cs) => cs.length === 3 && cs.every((c) => c.r === cs[0].r && c.s === cs[0].s);
+  const isTunnela = (cs) => cs.length === 3 && cs[0].s !== 'J' && cs.every((c) => c.r === cs[0].r && c.s === cs[0].s); // jokers never make a tunnela (pagat, Bhoos)
   function isRun(cs) {
     if (cs.length !== 3 || cs.some((c) => c.s === 'J') || !cs.every((c) => c.s === cs[0].s)) return false;
     const rs = cs.map((c) => c.r).sort((a, b) => a - b);
@@ -80,7 +80,7 @@
 
   // ---- maal points (pagat table) ----
   const TIPLU = [0, 3, 7, 12], POP = [0, 2, 5, 10], MARRIAGE = [0, 10, 30, 60];
-  const ALTER = 5, MAN = 2; // house values
+  const ALTER = [0, 5, 15, 25], MAN = 2; // alter per SparkAI/Wikipedia; man is a house value
   const tab = (a, n) => (n < a.length ? a[n] : a[a.length - 1] + (n - a.length + 1) * 5);
   const TUNNELA = { plain: 5, joker: 10, pop: 20 };
 
@@ -106,7 +106,7 @@
       const left = n[k] - mar;
       if (left > 0) { const p = tab(tb, left); pts += p; lines.push({ label: k + (left > 1 ? ' x' + left : ''), pts: p }); }
     }
-    if (n.alter) { const p = n.alter * ALTER; pts += p; lines.push({ label: 'alter x' + n.alter, pts: p }); }
+    if (n.alter) { const p = tab(ALTER, n.alter); pts += p; lines.push({ label: 'alter x' + n.alter, pts: p }); }
     if (n.man) { const p = n.man * MAN; pts += p; lines.push({ label: 'man x' + n.man, pts: p }); }
     return { points: pts, lines };
   }
@@ -175,5 +175,47 @@
     return { melds: out, rest: tail };
   }
 
-  return { SUITS, RANK_LABEL, makeDeck, kind, isWild, classify, countDublees, isDublee, maalScore, settle, autoGroup, label, isTunnela, isRun, key, red };
+  // Search for the most melds the hand can make (wilds as fillers); falls back to autoGroup if that is as good.
+  // ponytail: node cap keeps it fast on a phone; a capped search may miss the best split in rare 22-card hands
+  function bestGroup(cards, t, cap = 20000) {
+    const greedy = autoGroup(cards, t);
+    if (!t) return greedy;
+    const nat = cards.filter((c) => !isWild(c, t)).sort((a, b) => SUITS.indexOf(a.s) - SUITS.indexOf(b.s) || a.r - b.r);
+    const wilds = cards.filter((c) => isWild(c, t));
+    const near = (a, b) => (a.s === b.s && runFits(a.r, b.r)) || a.r === b.r;
+    let best = greedy.melds.length, bestMelds = null, nodes = 0;
+    (function rec(rem, w, melds) {
+      if (++nodes > cap || melds.length + Math.floor((rem.length + w) / 3) <= best) return;
+      if (!rem.length) {
+        const m = melds.slice(); for (let i = 0; i + 3 <= w; i += 3) m.push(wilds.slice(wilds.length - w + i, wilds.length - w + i + 3));
+        if (m.length > best) { best = m.length; bestMelds = m; }
+        return;
+      }
+      const c = rem[0], rest = rem.slice(1), wi = wilds.length - w;
+      for (let j = 0; j < rest.length; j++) {
+        if (!near(c, rest[j])) continue;
+        for (let k = j + 1; k < rest.length; k++) if (classify([c, rest[j], rest[k]], t).valid) rec(rest.filter((_, i) => i !== j && i !== k), w, [...melds, [c, rest[j], rest[k]]]);
+        if (w >= 1 && classify([c, rest[j], wilds[wi]], t).valid) rec(rest.filter((_, i) => i !== j), w - 1, [...melds, [c, rest[j], wilds[wi]]]);
+      }
+      if (w >= 2) rec(rest, w - 2, [...melds, [c, wilds[wi], wilds[wi + 1]]]);
+      rec(rest, w, melds);
+    })(nat, wilds.length, []);
+    if (!bestMelds) return greedy;
+    const used = new Set(bestMelds.flat());
+    return { melds: bestMelds, rest: cards.filter((c) => !used.has(c)) };
+  }
+
+  // disjoint tunnelas / pure runs in a hand, tunnelas first (what a player shows to see the maal)
+  function pureMelds(cards) {
+    const used = new Set(), out = [], cands = [];
+    for (let i = 0; i < cards.length; i++) for (let j = i + 1; j < cards.length; j++) for (let k = j + 1; k < cards.length; k++) {
+      const g = [cards[i], cards[j], cards[k]], c = classify(g, null);
+      if (c.valid && c.pure) cands.push({ g, tun: isTunnela(g) });
+    }
+    cands.sort((a, b) => b.tun - a.tun);
+    for (const c of cands) if (c.g.every((x) => !used.has(x.id))) { c.g.forEach((x) => used.add(x.id)); out.push(c.g); }
+    return out;
+  }
+
+  return { SUITS, RANK_LABEL, makeDeck, kind, isWild, classify, countDublees, isDublee, maalScore, settle, autoGroup, bestGroup, pureMelds, label, isTunnela, isRun, key, red };
 });

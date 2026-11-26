@@ -119,7 +119,7 @@ class Game {
     }
     this.removeFromHand(seat, flat);
     this.shown[seat] = groups.map((g) => g.map(byId));
-    this.pendingSee[seat] = true; // the maal opens once this turn's discard is down
+    this.seen[seat] = true; // pagat: the maal is seen the moment the three are laid down, before the throw
     this.event('show', seat);
   }
   declare(seat, groups, discardId) {
@@ -175,7 +175,7 @@ class Game {
   autoPlay(seat) {
     if (this.over || this.turn !== seat) return;
     if (this.step === 'draw') this.draw(seat, 'stock');
-    if (!this.over && this.step === 'discard') this.discardCard(seat, this.last ? this.last.id : this.hands[seat][this.hands[seat].length - 1]);
+    if (!this.over && this.step === 'discard') this.discardCard(seat, this.last && this.last.from === 'stock' ? this.last.id : this.hands[seat].find((i) => !this.last || i !== this.last.id));
   }
 }
 

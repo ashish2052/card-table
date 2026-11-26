@@ -30,8 +30,21 @@ function bestPure(hand) { // disjoint pure melds, tunnelas first
 
 // how close a hand is to winning: full melds dominate, then near-melds
 // near-melds valued by outs: how many unseen cards would finish them (3 decks = 3 copies of each card)
+// Like a good human player the bot remembers about half the discards it sees, at most a dozen, (dead cards = fewer outs)
+// and which of its throws the next player picked up (he is collecting those; don't feed him).
+const mems = new Map(); let cur = { seen: [], wants: [] };
+function remember(m) {
+  const k = (m.code || 'x') + ':' + m.you + ':' + (m.round || 0);
+  if (!mems.has(k)) { if (mems.size > 300) mems.clear(); mems.set(k, { seen: [], ids: new Set(), wants: [], thrown: null }); }
+  const mem = mems.get(k);
+  for (const c of m.discard || []) if (!mem.ids.has(c.id)) { mem.ids.add(c.id); if (Math.random() < 0.5) mem.seen.push(c); if (mem.seen.length > 12) mem.seen.shift(); }
+  if (mem.thrown && m.step === 'draw') { if (!(m.discard || []).some((c) => c.id === mem.thrown.id)) { mem.wants.push(mem.thrown); if (mem.wants.length > 4) mem.wants.shift(); } mem.thrown = null; }
+  cur = mem; return mem;
+}
+const feeds = (c) => cur.wants.some((w) => w.s !== 'J' && c.s !== 'J' && (w.r === c.r || (w.s === c.s && Math.abs(w.r - c.r) <= 2)));
+
 function partials(rest, seen) {
-  const cnt = {}; for (const c of rest) cnt[c.r + c.s] = (cnt[c.r + c.s] || 0) + 1;
+  const cnt = {}; for (const c of [...rest, ...cur.seen]) cnt[c.r + c.s] = (cnt[c.r + c.s] || 0) + 1;
   const outs = (r, s) => Math.max(0, 3 - (cnt[(r === 14 ? 1 : r) + s] || 0));
   let p = 0; const used = new Set();
   const pairs = [];
@@ -57,23 +70,23 @@ function evalHand(hand, t, seen) {
     const rest = hand.filter((c) => !inM.has(c.id));
     return Math.min(melds.length, 3) * 12 + Math.max(0, melds.length - 3) * 6 + partials(rest, false) + hand.filter((c) => c.s === 'J').length * 2;
   }
-  const ag = R.autoGroup(hand, t);
+  const ag = R.bestGroup(hand, t);
   const maal = hand.filter((c) => R.isWild(c, t)).length;
-  return ag.melds.length * 12 + partials(ag.rest.filter((c) => !R.isWild(c, t)), true) + maal * 3;
+  return ag.melds.length * 12 + partials(ag.rest.filter((c) => !R.isWild(c, t)), true) + maal * 2 + R.maalScore([], hand, t).points * 0.5;
 }
 function bestThrow(hand, t, seen, took) {
   let best = null, bv = -1e9;
   for (const c of hand) {
     if (c.id === took) continue;
     if (seen && R.isWild(c, t) && hand.some((x) => x.id !== took && !R.isWild(x, t))) continue; // maal seen: never throw maal while a plain card can go
-    const v = evalHand(hand.filter((x) => x.id !== c.id), t, seen);
+    const v = evalHand(hand.filter((x) => x.id !== c.id), t, seen) - (feeds(c) ? 3 : 0);
     if (v > bv) { bv = v; best = c; }
   }
   return { card: best, value: bv };
 }
 
 function decide(m) {
-  const hand = m.handFlat, t = m.tiplu, seen = !!t;
+  const hand = m.handFlat, t = m.tiplu, seen = !!t, mem = remember(m);
   if (m.step === 'draw') {
     const top = m.discard[m.discard.length - 1];
     let take = false;
@@ -88,13 +101,14 @@ function decide(m) {
     const p = bestPure(hand);
     if (p.length >= 3) return { t: 'show', groups: p.slice(0, 3).map((g) => g.map((c) => c.id)) };
   } else if (seen) {
-    const ag = R.autoGroup(hand, t);
+    const ag = R.bestGroup(hand, t);
     const k = (m.players[m.you].shown || []).length;
     if (ag.rest.length === 1 && ag.melds.length === 7 - k)
       return { t: 'declare', groups: ag.melds.map((g) => g.map((c) => c.id)), discard: ag.rest[0].id };
   }
   const took = m.last && m.last.from === 'discard' ? m.last.id : null;
-  return { t: 'discard', id: bestThrow(hand, t, seen, took).card.id };
+  const card = bestThrow(hand, t, seen, took).card; mem.thrown = card;
+  return { t: 'discard', id: card.id };
 }
 
 module.exports = { decide };

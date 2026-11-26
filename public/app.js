@@ -349,7 +349,7 @@
     let melds = groups.length === threes.length + singles.length && threes.length === 7 - k && singles.length === 1 && threes.every((g) => classifyGroup(g).valid);
     autoDecl = null;
     if (!melds) { // the hand wins even if it isn't laid out in groups: find the melds for him
-      const ag = R.autoGroup(S.handFlat, S.tiplu || null);
+      const ag = R.bestGroup(S.handFlat, S.tiplu || null);
       if (ag.melds.length === 7 - k && ag.rest.length === 1) { autoDecl = { groups: ag.melds.map((g) => g.map((c) => c.id)), discard: ag.rest[0].id }; melds = true; }
     }
     if (k && !S.seenMe) melds = false; // shown this turn: the maal (and the win) opens after the throw
@@ -378,7 +378,7 @@
     const pureGroups = groups.filter((g) => g.length === 3 && classifyGroup(g).pure);
     const pairGroups = groups.filter((g) => g.length === 2 && classifyGroup(g).kind === 'dublee');
     const shownMe = (S.players[me()].shown || []).length > 0;
-    const canShow = canDisc && !S.seenMe && !shownMe && pureGroups.length >= 3;
+    const canShow = canDisc && !S.seenMe && !shownMe && (pureGroups.length >= 3 || R.pureMelds(S.handFlat).length >= 3); // found for him, as the computers do
     const canShowDub = canDisc && !S.seenMe && !shownMe && S.opts.dubleeWin === 8 && pairGroups.length >= 7;
     $('#aShow').hidden = !(canShow || canShowDub); $('#aShow').textContent = canShow ? 'Show 3 melds' : 'Show 7 dublees';
     const sh = canDisc ? shape() : { dub: false, melds: false };
@@ -410,7 +410,9 @@
   $('#aDiscard').onclick = () => { const id = [...sel][0]; doDiscard(id); };
   $('#aShow').onclick = () => {
     const pure = groups.filter((g) => g.length === 3 && classifyGroup(g).pure);
+    const found = R.pureMelds(S.handFlat);
     if (pure.length >= 3) send({ t: 'show', groups: pure.sort((a, b) => (classifyGroup(b).kind === 'tunnela') - (classifyGroup(a).kind === 'tunnela')).slice(0, 3) });
+    else if (found.length >= 3) send({ t: 'show', groups: found.slice(0, 3).map((g) => g.map((c) => c.id)) });
     else send({ t: 'show', groups: groups.filter((g) => g.length === 2 && classifyGroup(g).kind === 'dublee').slice(0, 7) });
   };
   $('#aDeclare').onclick = () => {
@@ -507,7 +509,7 @@
     const pays = r.transfers.length ? r.transfers.map((t) => `<span>${nm(t.from)} pays ${nm(t.to)} <b>${t.amt}</b></span>`).join('') : '<span>No payments</span>';
     const tip = r.tiplu ? `${R.RANK_LABEL[r.tiplu.r]}${SUIT_CH[r.tiplu.s]}` : '';
     const win = w >= 0 ? r.rows[w] : null;
-    $('#sheetBody').innerHTML = `<div class="sheet"><p style="float:right;margin:0"><button class="btn gold" id="nextRound">Deal next round</button> <button class="btn" data-close2>Close</button></p><h2>${w >= 0 ? nm(w) + ' wins' + (r.dublee ? ' with dublees (+5 each)' : '') : 'Round void'}</h2><p class="hint">Tiplu was <b>${tip}</b> · scoring: tiplu 3/7, poplu & jhiplu 2/5/10, marriage 10/30, tunnela 5/10/20, alter 5, man 2; each pair of players pays the difference</p>` +
+    $('#sheetBody').innerHTML = `<div class="sheet"><p style="float:right;margin:0"><button class="btn gold" id="nextRound">Deal next round</button> <button class="btn" data-close2>Close</button></p><h2>${w >= 0 ? nm(w) + ' wins' + (r.dublee ? ' with dublees (+5 each)' : '') : 'Round void'}</h2><p class="hint">Tiplu was <b>${tip}</b> · scoring: tiplu 3/7, poplu & jhiplu 2/5/10, marriage 10/30, tunnela 5/10/20, alter 5/15/25, man 2; each pair of players pays the difference</p>` +
       (win ? `<div style="margin:4px 0 10px;white-space:nowrap;overflow:auto">${faces(win.shown.flat())}<span style="display:inline-block;width:16px"></span>${faces(win.hand.flat())}</div>` : '') +
       `<table><tr><th>Player</th><th>Maal points</th><th class="num">Pts</th><th class="num">Round</th><th class="num">Total</th></tr>${rows}</table><div class="pay">${pays}</div></div>`;
     $('#sheet').hidden = false; $('#nextRound').onclick = () => { send({ t: 'next' }); };
